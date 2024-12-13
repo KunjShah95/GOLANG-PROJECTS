@@ -35,11 +35,11 @@ This repository contains a Go-based implementation of a basic blockchain built f
 To run this project locally, follow these steps:
 
 1. **Clone the repository:**
-
+   ''' bash
    git clone https://github.com/yourusername/book-checkout-blockchain.git
    cd book-checkout-blockchain
-
-2. Install dependencies:
+   '''
+3. Install dependencies:
 
 Make sure you have Go installed. You can download it from golang.org. 🌐
 
@@ -62,25 +62,26 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
    Description: Creates a new book checkout record. 📝
    Request Body:
    json
+'''
    {
    "book_id": "12345",
    "user": "John Doe",
    "checkout_date": "2023-10-01",
    "is_genesis": false
-   }
+   } '''
    Response:
    Returns the created checkout record in JSON format.
-3. Create New Book
+4. Create New Book
    Endpoint: POST /new
    Description: Creates a new book record. 📚
    Request Body:
    json
-   {
+  ''' {
    "title": "The Great Gatsby",
    "author": "F. Scott Fitzgerald",
    "publish_date": "1925-04-10",
    "isbn": "9780743273565"
-   }
+   }'''
    Response:
    Returns the created book record with a unique ID in JSON format.
    🧪 How to Test
@@ -89,14 +90,17 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
 Example using curl:
 
 1. Create a new book:
+'''
    curl -X POST http://localhost:3000/new -H "Content-Type: application/json" -d '{"title": "The Great Gatsby", "author": "F. Scott Fitzgerald", "publish_date": "1925-04-10", "isbn": "9780743273565"}'
-
+'''
 2. Checkout a book:
+'''
    curl -X POST http://localhost:3000/ -H "Content-Type: application/json" -d '{"book_id": "12345", "user": "John Doe", "checkout_date": "2023-10-01", "is_genesis": false}'
-
-3. Get the blockchain:
-   curl -X GET http://localhost:3000/
-
+'''
+4. Get the blockchain:
+ '''
+  curl -X GET http://localhost:3000/
+'''
 🤝 Contributing
 Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements. 💡
 
