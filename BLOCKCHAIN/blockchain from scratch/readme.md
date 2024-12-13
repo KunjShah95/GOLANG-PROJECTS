@@ -89,10 +89,12 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
 Example using curl:
 
 1. Create a new book:
-   curl -X POST http://localhost:3000/new -H "Content-Type: application/json" -d '{"title": "The Great Gatsby", "author": "F. Scott Fitzgerald", "publish_date": "1925-04-10", "isbn": "9780743273565"}'
+   
+curl -X POST http://localhost:3000/new -H "Content-Type: application/json" -d '{"title": "The Great Gatsby", "author": "F. Scott Fitzgerald", "publish_date": "1925-04-10", "isbn": "9780743273565"}'
 
 2. Checkout a book:
-   curl -X POST http://localhost:3000/ -H "Content-Type: application/json" -d '{"book_id": "12345", "user": "John Doe", "checkout_date": "2023-10-01", "is_genesis": false}'
+  
+ curl -X POST http://localhost:3000/ -H "Content-Type: application/json" -d '{"book_id": "12345", "user": "John Doe", "checkout_date": "2023-10-01", "is_genesis": false}'
 
 3. Get the blockchain:
    curl -X GET http://localhost:3000/
