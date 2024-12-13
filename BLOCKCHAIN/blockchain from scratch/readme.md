@@ -33,9 +33,10 @@ To run this project locally, follow these steps:
 1. **Clone the repository:**
 
    git clone https://github.com/yourusername/book-checkout-blockchain.git
+
    cd book-checkout-blockchain
 
-2. Install dependencies:
+3. Install dependencies:
 
 Make sure you have Go installed. You can download it from golang.org. 🌐
 
@@ -50,6 +51,8 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
    Description: Retrieves the entire blockchain of book checkouts. 📜
    Response:
    Returns a JSON array of blocks.
+
+
 2. Write Block (Checkout a Book)
    Endpoint: POST /
    Description: Creates a new book checkout record. 📝
@@ -63,6 +66,8 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
    }
    Response:
    Returns the created checkout record in JSON format.
+
+
 3. Create New Book
    Endpoint: POST /new
    Description: Creates a new book record. 📚
@@ -74,7 +79,9 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
    "publish_date": "1925-04-10",
    "isbn": "9780743273565"
    }
-   Response:
+
+
+    Response:
    Returns the created book record with a unique ID in JSON format.
    🧪 How to Test
    You can use tools like Postman or curl to test the API endpoints. 🛠️
