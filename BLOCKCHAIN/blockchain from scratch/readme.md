@@ -52,14 +52,22 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
 📡 API Endpoints
 
 1. Get Blockchain
+
    Endpoint: GET /
+
    Description: Retrieves the entire blockchain of book checkouts. 📜
+
    Response:
+
    Returns a JSON array of blocks.
 2. Write Block (Checkout a Book)
+
    Endpoint: POST /
+ 
    Description: Creates a new book checkout record. 📝
+
    Request Body:
+
    json
 
    {
@@ -68,12 +76,17 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
    "checkout_date": "2023-10-01",
    "is_genesis": false
    } 
+
    Response:
    Returns the created checkout record in JSON format.
-4. Create New Book
+3. Create New Book
+
    Endpoint: POST /new
+
    Description: Creates a new book record. 📚
+
    Request Body:
+
    json
     {
    "title": "The Great Gatsby",
@@ -81,18 +94,27 @@ Make sure you have Go installed. You can download it from golang.org. 🌐
    "publish_date": "1925-04-10",
    "isbn": "9780743273565"
    }
+
    Response:
+
    Returns the created book record with a unique ID in JSON format.
-   🧪 How to Test
+
+
+🧪 How to Test
+
    You can use tools like Postman or curl to test the API endpoints. 🛠️
+
 
 Example using curl:
 
 1. Create a new book:
+
+
    curl -X POST http://localhost:3000/new -H "Content-Type: application/json" -d '{"title": "The Great Gatsby", "author": "F. Scott Fitzgerald", "publish_date": "1925-04-10", "isbn": "9780743273565"}
    
 2. Checkout a book:
 
+ 
    curl -X POST http://localhost:3000/ -H "Content-Type: application/json" -d '{"book_id": "12345", "user": "John Doe", "checkout_date": "2023-10-01", "is_genesis": false}'
 
 3. Get the blockchain:
