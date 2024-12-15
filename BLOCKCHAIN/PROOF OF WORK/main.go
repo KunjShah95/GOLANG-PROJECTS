@@ -48,28 +48,36 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go func() {
-		t := time.Now()
-		genesisBlock := Block{}
-		genesisBlock = Block{0, t.String(), 0, calculateHash(genesisBlock), "", difficulty, ""}
-		spew.Dump(genesisBlock)
+	// Initialize the genesis block synchronously
+	t := time.Now()
+	genesisBlock := Block{
+		Index:      0,
+		Timestamp:  t.String(),
+		Data:       0,
+		PrevHash:   "",
+		Difficulty: difficulty,
+	}
+	genesisBlock.Hash = calculateHash(genesisBlock)
+	spew.Dump(genesisBlock)
 
-		mutex.Lock()
-		Blockchain = append(Blockchain, genesisBlock)
-		mutex.Unlock()
-	}()
+	mutex.Lock()
+	Blockchain = append(Blockchain, genesisBlock)
+	mutex.Unlock()
+
 	log.Fatal(run())
-
 }
 
 // web server
 func run() error {
-	mux := makeMuxRouter()
+	muxRouter := makeMuxRouter()
 	httpPort := os.Getenv("PORT")
+	if httpPort == "" {
+		httpPort = "8000" // Default port if not specified
+	}
 	log.Println("HTTP Server Listening on port :", httpPort)
 	s := &http.Server{
 		Addr:           ":" + httpPort,
-		Handler:        mux,
+		Handler:        muxRouter,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -112,7 +120,7 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	//ensure atomicity when creating new block
+	// Ensure atomicity when creating new block
 	mutex.Lock()
 	newBlock := generateBlock(Blockchain[len(Blockchain)-1], m.Data)
 	mutex.Unlock()
@@ -123,7 +131,6 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
-
 }
 
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
@@ -155,7 +162,7 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 	return true
 }
 
-// SHA256 hasing
+// SHA256 hashing
 func calculateHash(block Block) string {
 	record := strconv.Itoa(block.Index) + block.Timestamp + strconv.Itoa(block.Data) + block.PrevHash + block.Nonce
 	h := sha256.New()
@@ -188,7 +195,6 @@ func generateBlock(oldBlock Block, Data int) Block {
 			newBlock.Hash = calculateHash(newBlock)
 			break
 		}
-
 	}
 	return newBlock
 }
