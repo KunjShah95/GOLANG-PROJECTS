@@ -1,0 +1,40 @@
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 - Logged
+Timestamp: 2024-12-27T10:28:01+05:30
+Method: GET
+URL: /
+RemoteAddr: [::1]:65416
+Headers: map[Accept:[text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7] Accept-Encoding:[gzip, deflate, br, zstd] Accept-Language:[en-US,en;q=0.9,vi;q=0.8] Cache-Control:[max-age=0] Connection:[keep-alive] Cookie:[_dd_s=rum=0&expire=1735276380033] Dnt:[1] Sec-Ch-Ua:["Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"] Sec-Ch-Ua-Mobile:[?0] Sec-Ch-Ua-Platform:["Windows"] Sec-Fetch-Dest:[document] Sec-Fetch-Mode:[navigate] Sec-Fetch-Site:[none] Sec-Fetch-User:[?1] Sec-Gpc:[1] Upgrade-Insecure-Requests:[1] User-Agent:[Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36]]
+Body: 
+Status: Logged
+
+
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 - Logged
+Timestamp: 2024-12-27T10:28:02+05:30
+Method: GET
+URL: /
+RemoteAddr: [::1]:65437
+Headers: map[Accept:[*/*] Accept-Encoding:[gzip, deflate, br, zstd] Accept-Language:[en-US,en;q=0.9,vi;q=0.8] Connection:[keep-alive] Cookie:[_dd_s=rum=0&expire=1735276380033] Sec-Fetch-Dest:[empty] Sec-Fetch-Mode:[cors] Sec-Fetch-Site:[none] User-Agent:[Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36]]
+Body: 
+Status: Logged
+
+
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 - Logged
+Timestamp: 2024-12-27T10:28:04+05:30
+Method: GET
+URL: /
+RemoteAddr: [::1]:65416
+Headers: map[Accept:[*/*] Accept-Encoding:[gzip, deflate, br, zstd] Accept-Language:[en-US,en;q=0.9,vi;q=0.8] Connection:[keep-alive] Cookie:[_dd_s=rum=0&expire=1735276383556] Dnt:[1] Referer:[http://localhost:8080/] Sec-Ch-Ua:["Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"] Sec-Ch-Ua-Mobile:[?0] Sec-Ch-Ua-Platform:["Windows"] Sec-Fetch-Dest:[empty] Sec-Fetch-Mode:[cors] Sec-Fetch-Site:[same-origin] Sec-Gpc:[1] User-Agent:[Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36]]
+Body: 
+Status: Logged
+
+
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 - Logged
+Timestamp: 2024-12-27T10:28:05+05:30
+Method: GET
+URL: /favicon.ico
+RemoteAddr: [::1]:65475
+Headers: map[Accept:[image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8] Accept-Encoding:[gzip, deflate, br, zstd] Accept-Language:[en-US,en;q=0.9,vi;q=0.8] Connection:[keep-alive] Cookie:[_dd_s=rum=0&expire=1735276384597] Dnt:[1] Referer:[http://localhost:8080/] Sec-Ch-Ua:["Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"] Sec-Ch-Ua-Mobile:[?0] Sec-Ch-Ua-Platform:["Windows"] Sec-Fetch-Dest:[image] Sec-Fetch-Mode:[no-cors] Sec-Fetch-Site:[same-origin] Sec-Gpc:[1] User-Agent:[Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36]]
+Body: 
+Status: Logged
+
+
