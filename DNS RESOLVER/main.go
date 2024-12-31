@@ -3,250 +3,319 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"net"
 	"os"
-	"regexp"
+	"os/user"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
-var (
-	cache           = make(map[string][]net.IP)
-	mu              sync.RWMutex
-	cacheFile       = "dns_cache.json"
-	customDNSServer string
+const (
+	cacheFile = "dns_cache.json"
+	logFile   = "dns_resolver.log"
 )
 
-// Main function
-func main() {
-	loadCache()
+type DNSCache struct {
+	mu    sync.RWMutex
+	cache map[string]DNSRecord
+}
 
-	for {
-		showMenu()
+type DNSRecord struct {
+	Domain      string
+	RecordTypes map[string][]string
+	Timestamp   time.Time
+}
 
-		var choice int
-		_, err := fmt.Scan(&choice)
-		if err != nil {
-			fmt.Println("Invalid input, please try again.")
-			continue
-		}
+type DNSResolver struct {
+	cache        *DNSCache
+	logger       *log.Logger
+	customServer []string
+}
 
-		switch choice {
-		case 1:
-			resolveRecords("A")
-		case 2:
-			resolveRecords("AAAA")
-		case 3:
-			resolveMXRecords()
-		case 4:
-			setCustomDNSServer()
-		case 5:
-			clearCache()
-		case 6:
-			showCache()
-		case 7:
-			fmt.Println("Exiting...")
-			saveCache() // Save cache before exiting
-			return
-		default:
-			fmt.Println("Invalid option, please select again.")
-		}
+func NewDNSResolver() *DNSResolver {
+	return &DNSResolver{
+		cache: &DNSCache{
+			cache: make(map[string]DNSRecord),
+		},
+		logger: setupLogger(),
 	}
 }
 
-// Show the main menu
-func showMenu() {
-	fmt.Println("\nDNS Resolver")
-	fmt.Println("1. Resolve A Record")
-	fmt.Println("2. Resolve AAAA Record")
-	fmt.Println("3. Resolve MX Record")
-	fmt.Println("4. Set Custom DNS Server")
-	fmt.Println("5. Clear Cache")
-	fmt.Println("6. Show Cache")
-	fmt.Println("7. Exit")
-	fmt.Print("Select an option: ")
+func setupLogger() *log.Logger {
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("Failed to open log file:", err)
+		return log.New(os.Stdout, "DNS_RESOLVER: ", log.Ldate|log.Ltime|log.Lshortfile)
+	}
+	return log.New(file, "DNS_RESOLVER: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-// Resolve DNS records for specified types
-func resolveRecords(recordType string) {
-	fmt.Print("Enter domain name (comma separated for multiple): ")
-	var domains string
-	fmt.Scan(&domains)
-
-	domainList := splitAndTrim(domains)
-	var wg sync.WaitGroup
-
-	for _, domain := range domainList {
-		if !isValidDomain(domain) {
-			fmt.Printf("Invalid domain name: %s\n", domain)
-			continue
-		}
-
-		wg.Add(1)
-		go func(domain string) {
-			defer wg.Done()
-			if recordType == "A" {
-				resolveA(domain)
-			} else {
-				resolveAAAA(domain)
-			}
-		}(domain)
+func (r *DNSResolver) ResolveDomain(domain, recordType string) ([]string, error) {
+	// Check cache first
+	if cachedRecord := r.checkCache(domain, recordType); cachedRecord != nil {
+		return cachedRecord, nil
 	}
 
-	wg.Wait()
+	var results []string
+	var err error
+
+	// Prioritize custom DNS servers if provided
+	if len(r.customServer) > 0 {
+		results, err = r.resolveWithCustomDNS(domain, recordType, r.customServer)
+	} else {
+		results, err = r.resolveWithDefaultDNS(domain, recordType)
+	}
+
+	if err != nil {
+		r.logger.Printf("Resolution error for %s (%s): %v", domain, recordType, err)
+		return nil, err
+	}
+
+	// Cache the results
+	r.cacheResults(domain, recordType, results)
+	return results, nil
 }
 
-// Resolve A records for a domain
-func resolveA(domain string) {
-	mu.RLock()
-	if cachedIPs, found := cache[domain]; found {
-		fmt.Printf("Cached A Record for %s: %v\n", domain, cachedIPs)
-		mu.RUnlock()
-		return
-	}
-	mu.RUnlock()
+func (r *DNSResolver) resolveWithCustomDNS(_, _ string, _ []string) ([]string, error) {
+	// Custom DNS resolution logic here
+	return nil, fmt.Errorf("custom DNS resolution not implemented")
+}
 
+func (r *DNSResolver) resolveWithDefaultDNS(domain, recordType string) ([]string, error) {
+	var results []string
+	var err error
+
+	switch recordType {
+	case "A":
+		results, err = r.resolveARecord(domain)
+	case "AAAA":
+		results, err = r.resolveAAAARecord(domain)
+	case "MX":
+		results, err = r.resolveMXRecord(domain)
+	case "TXT":
+		results, err = r.resolveTXTRecord(domain)
+	case "NS":
+		results, err = r.resolveNSRecord(domain)
+	case "PTR":
+		results, err = r.resolvePTRRecord(domain) // Reverse DNS lookup
+	default:
+		err = fmt.Errorf("unsupported record type: %s", recordType)
+	}
+
+	return results, err
+}
+
+func (r *DNSResolver) resolveARecord(domain string) ([]string, error) {
 	ips, err := net.LookupIP(domain)
 	if err != nil {
-		fmt.Printf("Failed to resolve A record for %s: %v\n", domain, err)
-		return
+		return nil, err
 	}
 
-	var aRecords []net.IP
+	var results []string
 	for _, ip := range ips {
-		if ip.To4() != nil {
-			aRecords = append(aRecords, ip)
+		if ipv4 := ip.To4(); ipv4 != nil {
+			results = append(results, ipv4.String())
 		}
 	}
-
-	mu.Lock()
-	cache[domain] = aRecords
-	mu.Unlock()
-
-	fmt.Printf("Resolved A Record for %s: %v\n", domain, aRecords)
+	return results, nil
 }
 
-// Resolve AAAA records for a domain
-func resolveAAAA(domain string) {
-	mu.RLock()
-	if cachedIPs, found := cache[domain]; found {
-		fmt.Printf("Cached AAAA Record for %s: %v\n", domain, cachedIPs)
-		mu.RUnlock()
-		return
-	}
-	mu.RUnlock()
-
+func (r *DNSResolver) resolveAAAARecord(domain string) ([]string, error) {
 	ips, err := net.LookupIP(domain)
 	if err != nil {
-		fmt.Printf("Failed to resolve AAAA record for %s: %v\n", domain, err)
-		return
+		return nil, err
 	}
 
-	var aaaaRecords []net.IP
+	var results []string
 	for _, ip := range ips {
-		if ip.To16() != nil && ip.To4() == nil {
-			aaaaRecords = append(aaaaRecords, ip)
+		if ipv6 := ip.To16(); ipv6 != nil && ip.To4() == nil {
+			results = append(results, ipv6.String())
 		}
 	}
-
-	mu.Lock()
-	cache[domain] = aaaaRecords
-	mu.Unlock()
-
-	fmt.Printf("Resolved AAAA Record for %s: %v\n", domain, aaaaRecords)
+	return results, nil
 }
 
-// Resolve MX records for a domain
-func resolveMXRecords() {
-	fmt.Print("Enter domain name: ")
-	var domain string
-	fmt.Scan(&domain)
-
-	if !isValidDomain(domain) {
-		fmt.Printf("Invalid domain name: %s\n", domain)
-		return
-	}
-
+func (r *DNSResolver) resolveMXRecord(domain string) ([]string, error) {
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
-		fmt.Printf("Failed to resolve MX records for %s: %v\n", domain, err)
-		return
+		return nil, err
 	}
 
-	fmt.Printf("Resolved MX Records for %s:\n", domain)
+	var results []string
 	for _, mx := range mxRecords {
-		fmt.Printf("  - %s (priority: %d)\n", mx.Host, mx.Pref)
+		results = append(results, fmt.Sprintf("%s (Priority: %d)", mx.Host, mx.Pref))
 	}
+	return results, nil
 }
 
-// Set a custom DNS server
-func setCustomDNSServer() {
-	fmt.Print("Enter custom DNS server (e.g., 8.8.8.8): ")
-	fmt.Scan(&customDNSServer)
-	fmt.Printf("Custom DNS server set to: %s\n", customDNSServer)
-}
-
-// Clear the DNS cache
-func clearCache() {
-	mu.Lock()
-	cache = make(map[string][]net.IP)
-	mu.Unlock()
-	fmt.Println("Cache cleared.")
-}
-
-// Show the current cache
-func showCache() {
-	mu.RLock()
-	defer mu.RUnlock()
-	fmt.Println("Current Cache:")
-	for domain, ips := range cache {
-		fmt.Printf("  %s: %v\n", domain, ips)
-	}
-}
-
-// Load cache from file
-func loadCache() {
-	data, err := ioutil.ReadFile(cacheFile)
+func (r *DNSResolver) resolveTXTRecord(domain string) ([]string, error) {
+	txtRecords, err := net.LookupTXT(domain)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			fmt.Printf("Error loading cache: %v\n", err)
+		return nil, err
+	}
+	return txtRecords, nil
+}
+
+func (r *DNSResolver) resolveNSRecord(domain string) ([]string, error) {
+	nsRecords, err := net.LookupNS(domain)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []string
+	for _, ns := range nsRecords {
+		results = append(results, ns.Host)
+	}
+	return results, nil
+}
+
+func (r *DNSResolver) resolvePTRRecord(ip string) ([]string, error) {
+	names, err := net.LookupAddr(ip)
+	if err != nil {
+		return nil, err
+	}
+	return names, nil
+}
+
+func (r *DNSResolver) buildCLI() *cobra.Command {
+	var rootCmd = &cobra.Command{
+		Use:   "dnsresolver",
+		Short: "Advanced DNS Resolution Tool",
+		Long:  "A comprehensive DNS resolution and investigation tool",
+	}
+
+	var resolveCmd = &cobra.Command{
+		Use:   "resolve [domain] [record-type]",
+		Short: "Resolve DNS records for a domain",
+		Args:  cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			domain := args[0]
+			recordType := strings.ToUpper(args[1])
+
+			results, err := r.ResolveDomain(domain, recordType)
+			if err != nil {
+				color.Red("Error: %v", err)
+				return
+			}
+
+			color.Green("Results for %s (%s):", domain, recordType)
+			for _, result := range results {
+				fmt.Println(result)
+			}
+		},
+	}
+
+	rootCmd.AddCommand(resolveCmd)
+
+	var customDNSCmd = &cobra.Command{
+		Use:   "setdns [dns1] [dns2] [..]",
+		Short: "Set custom DNS servers",
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			r.customServer = args
+			color.Green("Custom DNS servers set: %v", r.customServer)
+		},
+	}
+
+	rootCmd.AddCommand(customDNSCmd)
+
+	return rootCmd
+}
+
+func main() {
+	homeDir, err := getUserHomeDir()
+	if err != nil {
+		fmt.Printf("Error getting user home directory: %v\n", err)
+	} else {
+		fmt.Printf("User home directory: %s\n", homeDir)
+	}
+
+	resolver := NewDNSResolver()
+
+	// Load cache from file
+	resolver.loadCache()
+
+	// Command-line mode
+	if err := resolver.buildCLI().Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// Save cache before exiting
+	resolver.saveCache()
+}
+
+// Cache handling
+func (r *DNSResolver) checkCache(domain, recordType string) []string {
+	r.cache.mu.RLock()
+	defer r.cache.mu.RUnlock()
+	if record, found := r.cache.cache[domain]; found {
+		if results, ok := record.RecordTypes[recordType]; ok {
+			return results
 		}
+	}
+	return nil
+}
+
+func (r *DNSResolver) cacheResults(domain, recordType string, results []string) {
+	r.cache.mu.Lock()
+	defer r.cache.mu.Unlock()
+
+	if _, found := r.cache.cache[domain]; !found {
+		r.cache.cache[domain] = DNSRecord{
+			Domain:      domain,
+			RecordTypes: make(map[string][]string),
+			Timestamp:   time.Now(),
+		}
+	}
+
+	r.cache.cache[domain].RecordTypes[recordType] = results
+}
+
+func (r *DNSResolver) loadCache() {
+	data, err := os.ReadFile(cacheFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return // Ignore if the file doesn't exist
+		}
+		fmt.Printf("Error loading cache: %v\n", err)
 		return
 	}
 
-	if err := json.Unmarshal(data, &cache); err != nil {
+	if err := json.Unmarshal(data, &r.cache.cache); err != nil {
 		fmt.Printf("Error parsing cache: %v\n", err)
 	}
 }
 
-// Save cache to file
-func saveCache() {
-	mu.RLock()
-	defer mu.RUnlock()
-	data, err := json.Marshal(cache)
+func (r *DNSResolver) saveCache() {
+	r.cache.mu.RLock()
+	defer r.cache.mu.RUnlock()
+
+	data, err := json.Marshal(r.cache.cache)
 	if err != nil {
 		fmt.Printf("Error saving cache: %v\n", err)
 		return
 	}
 
-	if err := ioutil.WriteFile(cacheFile, data, 0644); err != nil {
+	if err := os.WriteFile(cacheFile, data, 0644); err != nil {
 		fmt.Printf("Error writing cache to file: %v\n", err)
 	}
 }
 
-// Split input by comma and trim whitespace
-func splitAndTrim(input string) []string {
-	parts := strings.Split(input, ",")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
+// Additional utility functions for advanced DNS operations
+
+func getUserHomeDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
 	}
-	return parts
+	return usr.HomeDir, nil
 }
 
-// Validate domain name using regex
-func isValidDomain(domain string) bool {
-	const domainPattern = `^[A-Za-z0-9-]{1,63}(\.[A-Za-z]{2,6})+$`
-	re := regexp.MustCompile(domainPattern)
-	return re.MatchString(domain)
-}
+// Additional utility functions for advanced DNS operations
+// Removed unused function validateDomain
